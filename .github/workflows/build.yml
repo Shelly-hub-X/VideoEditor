@@ -22,17 +22,39 @@ jobs:
         arch: x64
 
     - name: Setup vcpkg
-      uses: lukka/run-vcpkg@v11
+      run: |
+        git clone https://github.com/Microsoft/vcpkg.git
+        cd vcpkg
+        git checkout 365f6444ab40ee87c73c947b475b3a267b3cb77c
+        .\bootstrap-vcpkg.bat -disableMetrics
+        echo "VCPKG_ROOT=${{ github.workspace }}\vcpkg" >> $env:GITHUB_ENV
+
+    - name: Cache vcpkg packages
+      uses: actions/cache@v3
       with:
-        vcpkgGitCommitId: '365f6444ab40ee87c73c947b475b3a267b3cb77c'
+        path: |
+          vcpkg/installed
+          vcpkg/packages
+          vcpkg/buildtrees
+        key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
+        restore-keys: |
+          vcpkg-${{ runner.os }}-
+
+    - name: Install Dependencies
+      run: |
+        cd vcpkg
+        .\vcpkg install --triplet=x64-windows
 
     - name: Configure CMake
       run: |
-        cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
+        cmake -B build -S . `
+          -G "Visual Studio 17 2022" -A x64 `
+          -DCMAKE_BUILD_TYPE=Release `
+          -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}\vcpkg\scripts\buildsystems\vcpkg.cmake"
 
     - name: Build Project
       run: |
-        cmake --build build --config Release -j $env:NUMBER_OF_PROCESSORS
+        cmake --build build --config Release --parallel 2
 
     - name: Package Application
       run: |
