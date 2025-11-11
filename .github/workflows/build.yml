@@ -10,7 +10,7 @@ on:
 jobs:
   build-windows:
     runs-on: windows-latest
-    timeout-minutes: 120
+    timeout-minutes: 60
     
     steps:
     - name: Checkout Repository
@@ -21,21 +21,14 @@ jobs:
       with:
         arch: x64
 
-    - name: Install vcpkg
-      run: |
-        git clone https://github.com/Microsoft/vcpkg.git
-        cd vcpkg
-        .\bootstrap-vcpkg.bat
-        .\vcpkg integrate install
-
-    - name: Install Dependencies via vcpkg
-      run: |
-        cd vcpkg
-        .\vcpkg install --triplet=x64-windows
+    - name: Setup vcpkg
+      uses: lukka/run-vcpkg@v11
+      with:
+        vcpkgGitCommitId: '365f6444ab40ee87c73c947b475b3a267b3cb77c'
 
     - name: Configure CMake
       run: |
-        cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=$PWD/vcpkg/scripts/buildsystems/vcpkg.cmake
+        cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
 
     - name: Build Project
       run: |
