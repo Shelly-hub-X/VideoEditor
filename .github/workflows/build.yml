@@ -10,7 +10,7 @@ on:
 jobs:
   build-windows:
     runs-on: windows-latest
-    timeout-minutes: 180
+    timeout-minutes: 360
     
     steps:
     - name: Checkout Repository
@@ -109,5 +109,6 @@ jobs:
         generate_release_notes: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 
 
