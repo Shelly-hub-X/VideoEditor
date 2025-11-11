@@ -1,0 +1,88 @@
+name: Build and Package Video Editor
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    timeout-minutes: 120
+    
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Setup MSVC
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
+
+    - name: Install vcpkg
+      run: |
+        git clone https://github.com/Microsoft/vcpkg.git
+        cd vcpkg
+        .\bootstrap-vcpkg.bat
+        .\vcpkg integrate install
+
+    - name: Install Dependencies via vcpkg
+      run: |
+        cd vcpkg
+        .\vcpkg install --triplet=x64-windows
+
+    - name: Configure CMake
+      run: |
+        cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=$PWD/vcpkg/scripts/buildsystems/vcpkg.cmake
+
+    - name: Build Project
+      run: |
+        cmake --build build --config Release -j $env:NUMBER_OF_PROCESSORS
+
+    - name: Package Application
+      run: |
+        # Create release directory
+        New-Item -ItemType Directory -Force -Path release/VideoEditor
+        
+        # Copy executable
+        Copy-Item build/Release/VideoEditor.exe release/VideoEditor/ -ErrorAction Stop
+        
+        # Find and run windeployqt
+        $windeployqt = Get-ChildItem -Path vcpkg_installed/x64-windows -Filter windeployqt.exe -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($windeployqt) {
+          Write-Host "Running windeployqt..."
+          & $windeployqt.FullName release/VideoEditor/VideoEditor.exe --release --no-translations --no-system-d3d-compiler
+        } else {
+          Write-Warning "windeployqt not found, copying DLLs manually..."
+          Copy-Item vcpkg_installed/x64-windows/bin/*.dll release/VideoEditor/ -ErrorAction SilentlyContinue
+        }
+        
+        # Copy documentation
+        if (Test-Path README.md) { Copy-Item README.md release/VideoEditor/ }
+        if (Test-Path LICENSE) { Copy-Item LICENSE release/VideoEditor/ }
+        
+        # Create archive
+        Compress-Archive -Path release/VideoEditor -DestinationPath VideoEditor-Windows-x64.zip -Force
+        
+        Write-Host "Package created successfully!"
+        Get-ChildItem release/VideoEditor | Format-Table Name, Length
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: VideoEditor-Windows-x64
+        path: VideoEditor-Windows-x64.zip
+        if-no-files-found: error
+        retention-days: 30
+
+    - name: Create Release (on tag)
+      if: startsWith(github.ref, 'refs/tags/v')
+      uses: softprops/action-gh-release@v2
+      with:
+        files: VideoEditor-Windows-x64.zip
+        draft: false
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,18 @@
+{
+  "name": "video-editor",
+  "version": "1.0.0",
+  "description": "专业的视频拆分与合成工具",
+  "dependencies": [
+    "ffmpeg",
+    "qtbase",
+    {
+      "name": "qtmultimedia",
+      "default-features": false,
+      "features": [
+        "ffmpeg",
+        "widgets"
+      ]
+    }
+  ],
+  "builtin-baseline": "365f6444ab40ee87c73c947b475b3a267b3cb77c"
+}

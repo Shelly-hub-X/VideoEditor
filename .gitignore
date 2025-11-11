@@ -1,0 +1,65 @@
+# GitHub Actions 快速设置脚本
+# 运行此脚本以初始化 Git 并准备推送到 GitHub
+
+param(
+    [Parameter(Mandatory=$false)]
+    [string]$GithubUsername = "",
+    
+    [Parameter(Mandatory=$false)]
+    [string]$RepoName = "video-editor"
+)
+
+Write-Host "=== GitHub Actions 自动设置 ===" -ForegroundColor Cyan
+Write-Host ""
+
+# 检查 Git 是否已安装
+if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
+    Write-Host "❌ Git 未安装!" -ForegroundColor Red
+    Write-Host "请运行: winget install Git.Git" -ForegroundColor Yellow
+    exit 1
+}
+
+# 检查是否已经是 Git 仓库
+if (Test-Path ".git") {
+    Write-Host "✅ Git 仓库已存在" -ForegroundColor Green
+} else {
+    Write-Host "📦 初始化 Git 仓库..." -ForegroundColor Yellow
+    git init
+    git branch -M main
+}
+
+# 检查 .gitignore
+if (-not (Test-Path ".gitignore")) {
+    Write-Host "📝 创建 .gitignore..." -ForegroundColor Yellow
+    @"
+# Build directories
+build/
+out/
+release/
+
+# vcpkg
+vcpkg_installed/
+.vcpkg/
+
+# IDE
+.vs/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Compiled files
+*.exe
+*.dll
+*.pdb
+*.obj
+*.lib
+*.exp
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db

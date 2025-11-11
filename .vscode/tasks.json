@@ -1,0 +1,91 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "配置 CMake",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "-B",
+                "${workspaceFolder}/build",
+                "-S",
+                "${workspaceFolder}",
+                "-DCMAKE_TOOLCHAIN_FILE=${env:VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+            ],
+            "group": "build",
+            "problemMatcher": [],
+            "detail": "使用 CMake 配置项目"
+        },
+        {
+            "label": "构建项目 (Debug)",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "${workspaceFolder}/build",
+                "--config",
+                "Debug"
+            ],
+            "group": "build",
+            "problemMatcher": [
+                "$msCompile"
+            ],
+            "detail": "编译 Debug 版本"
+        },
+        {
+            "label": "构建项目 (Release)",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "${workspaceFolder}/build",
+                "--config",
+                "Release"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [
+                "$msCompile"
+            ],
+            "detail": "编译 Release 版本"
+        },
+        {
+            "label": "运行程序",
+            "type": "shell",
+            "command": "${workspaceFolder}/build/bin/Release/VideoEditor.exe",
+            "group": "test",
+            "problemMatcher": [],
+            "detail": "运行视频剪辑助手"
+        },
+        {
+            "label": "完整构建并运行",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "配置 CMake",
+                "构建项目 (Release)",
+                "运行程序"
+            ],
+            "group": "test",
+            "problemMatcher": [],
+            "detail": "配置、编译并运行程序"
+        },
+        {
+            "label": "清理构建",
+            "type": "shell",
+            "command": "Remove-Item",
+            "args": [
+                "-Path",
+                "${workspaceFolder}/build",
+                "-Recurse",
+                "-Force",
+                "-ErrorAction",
+                "SilentlyContinue"
+            ],
+            "group": "build",
+            "problemMatcher": [],
+            "detail": "删除构建目录"
+        }
+    ]
+}
